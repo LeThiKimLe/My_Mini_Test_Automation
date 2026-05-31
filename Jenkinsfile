@@ -6,6 +6,10 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '20'))
     }
 
+    parameters {
+        choice(name: 'TEST_SUITE', choices: ['smoke', 'regression', 'all'], description: 'Test suite to run')
+    }
+
     environment {
         MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
     }
@@ -37,25 +41,47 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        stage('Smoke Tests') {
+            when {
+                expression { params.TEST_SUITE == 'smoke' || params.TEST_SUITE == 'all' }
+            }
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'mvn -B clean test'
-                    } else {
-                        bat 'mvn -B clean test'
-                    }
+                runMavenSuite('smoke')
+            }
+            post {
+                always {
+                    publishSuiteArtifacts('smoke')
                 }
             }
         }
 
-    }
-
-    post {
-        always {
-            junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-single/index.html, target/allure-results/**, target/site/allure-report/data/attachments/**, target/trace/**'
-            allure includeProperties: false, results: [[path: 'target/allure-results']]
+        stage('Regression Tests') {
+            when {
+                expression { params.TEST_SUITE == 'regression' || params.TEST_SUITE == 'all' }
+            }
+            steps {
+                runMavenSuite('regression')
+            }
+            post {
+                always {
+                    publishSuiteArtifacts('regression')
+                }
+            }
         }
     }
+}
+
+void runMavenSuite(String suite) {
+    if (isUnix()) {
+        sh "mvn -B clean test -P${suite}"
+    } else {
+        bat "mvn -B clean test -P${suite}"
+    }
+}
+
+void publishSuiteArtifacts(String suite) {
+    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+    archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-single/index.html, target/allure-results/**, target/site/allure-report/data/attachments/**, target/trace/**'
+    archiveArtifacts allowEmptyArchive: true, artifacts: 'target/allure-single/index.html', fingerprint: true
+    allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'target/allure-results']]
 }

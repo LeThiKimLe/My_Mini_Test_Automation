@@ -11,14 +11,14 @@ Runs on push, pull request, and manual dispatch.
 Main steps:
 - Set up Java 17
 - Install Playwright Chromium
-- Run `mvn -B clean test`
-- Upload Surefire reports
-- Upload Allure raw results
+- Run smoke tests with `mvn -B clean test -Psmoke`
+- Run regression tests with `mvn -B clean test -Pregression`
 - Upload screenshots from `target/site/allure-report/data/attachments`
-- Upload Allure HTML report from `target/site/allure-report`
 - Upload single-file Allure report from `target/allure-single/index.html`
 
 Because this project is configured to keep generating Allure reports even when tests fail, the workflow has a final guard step that reads Surefire XML and fails the job when any test has failures or errors.
+
+Pull requests run smoke tests only. Push and manual runs execute both smoke and regression jobs.
 
 ### CD
 
@@ -41,7 +41,8 @@ Pipeline file: `Jenkinsfile`
 The Jenkins pipeline:
 - Checks out the repository
 - Installs Playwright Chromium
-- Runs `mvn -B clean test`, which generates both normal and single-file Allure reports
+- Lets you choose `smoke`, `regression`, or `all` through the `TEST_SUITE` parameter
+- Runs `mvn -B clean test -Psmoke` or `mvn -B clean test -Pregression`
 - Publishes JUnit reports
 - Archives Allure report/results/screenshots/traces
 - Publishes Allure report when the Jenkins Allure plugin is installed
@@ -75,4 +76,16 @@ Local command:
 
 ```bash
 mvn clean test
+```
+
+Smoke only:
+
+```bash
+mvn clean test -Psmoke
+```
+
+Regression only:
+
+```bash
+mvn clean test -Pregression
 ```

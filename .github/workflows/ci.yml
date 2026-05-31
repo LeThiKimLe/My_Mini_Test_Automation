@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Maven Playwright tests
+  smoke:
+    name: Smoke tests
     runs-on: ubuntu-latest
 
     steps:
@@ -31,32 +31,84 @@ jobs:
           -Dexec.mainClass=com.microsoft.playwright.CLI
           -Dexec.args="install --with-deps chromium"
 
-      - name: Run tests and generate Allure report
-        run: mvn -B clean test
+      - name: Run smoke tests
+        run: mvn -B clean test -Psmoke
 
-      - name: Upload screenshots
+      - name: Upload smoke screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots
+          name: smoke-screenshots
           path: target/site/allure-report/data/attachments
           if-no-files-found: ignore
 
-      - name: Upload single-file Allure report
+      - name: Upload smoke Allure report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-single-html
+          name: smoke-allure-report-single-html
           path: target/allure-single/index.html
           if-no-files-found: ignore
 
-      - name: Fail job when tests fail
+      - name: Fail smoke job when tests fail
         if: always()
         shell: bash
         run: |
           if [ -d target/surefire-reports ] && find target/surefire-reports -name '*.xml' -print -quit | grep -q .; then
             if grep -R -E 'failures="[1-9][0-9]*"|errors="[1-9][0-9]*"' target/surefire-reports/*.xml; then
-              echo "One or more tests failed. Check the uploaded Allure report artifact."
+              echo "One or more smoke tests failed."
+              exit 1
+            fi
+          fi
+
+  regression:
+    name: Regression tests
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Install Playwright Chromium
+        run: >
+          mvn -B org.codehaus.mojo:exec-maven-plugin:3.1.0:java
+          -Dexec.mainClass=com.microsoft.playwright.CLI
+          -Dexec.args="install --with-deps chromium"
+
+      - name: Run regression tests
+        run: mvn -B clean test -Pregression
+
+      - name: Upload regression screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-screenshots
+          path: target/site/allure-report/data/attachments
+          if-no-files-found: ignore
+
+      - name: Upload regression Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-allure-report-single-html
+          path: target/allure-single/index.html
+          if-no-files-found: ignore
+
+      - name: Fail regression job when tests fail
+        if: always()
+        shell: bash
+        run: |
+          if [ -d target/surefire-reports ] && find target/surefire-reports -name '*.xml' -print -quit | grep -q .; then
+            if grep -R -E 'failures="[1-9][0-9]*"|errors="[1-9][0-9]*"' target/surefire-reports/*.xml; then
+              echo "One or more regression tests failed."
               exit 1
             fi
           fi
