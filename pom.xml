@@ -17,6 +17,8 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <aspectj.version>1.9.22.1</aspectj.version>
+    <allure.report.version>2.30.0</allure.report.version>
+    <allure.command>${project.basedir}/.allure/allure-${allure.report.version}/bin/allure</allure.command>
   </properties>
 
   <dependencies>
@@ -127,6 +129,7 @@
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-maven</artifactId>
             <configuration>
+                <reportVersion>${allure.report.version}</reportVersion>
                 <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
                 <reportDirectory>${project.build.directory}/site/allure-report</reportDirectory>
             </configuration>
@@ -140,6 +143,43 @@
                 </execution>
             </executions>
         </plugin>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>allure-single-file-report</id>
+                    <phase>test</phase>
+                    <goals>
+                        <goal>exec</goal>
+                    </goals>
+                    <configuration>
+                        <executable>${allure.command}</executable>
+                        <arguments>
+                            <argument>generate</argument>
+                            <argument>--single-file</argument>
+                            <argument>${project.build.directory}/allure-results</argument>
+                            <argument>--clean</argument>
+                            <argument>-o</argument>
+                            <argument>${project.build.directory}/allure-single</argument>
+                        </arguments>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+        <id>windows</id>
+        <activation>
+            <os>
+                <family>Windows</family>
+            </os>
+        </activation>
+        <properties>
+            <allure.command>${project.basedir}/.allure/allure-${allure.report.version}/bin/allure.bat</allure.command>
+        </properties>
+    </profile>
+  </profiles>
 </project>

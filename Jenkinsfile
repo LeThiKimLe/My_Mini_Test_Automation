@@ -48,12 +48,13 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
         always {
             junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
-            archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-results/**, target/screenshots/**, target/trace/**'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-single/index.html, target/allure-results/**, target/screenshots/**, target/trace/**'
             allure includeProperties: false, results: [[path: 'target/allure-results']]
         }
     }
