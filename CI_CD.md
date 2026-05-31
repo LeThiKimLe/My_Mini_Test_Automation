@@ -14,6 +14,7 @@ Main steps:
 - Run `mvn -B clean test`
 - Upload Surefire reports
 - Upload Allure raw results
+- Upload screenshots from `target/screenshots`
 - Upload Allure HTML report from `target/site/allure-report`
 - Upload single-file Allure report from `target/allure-single/index.html`
 

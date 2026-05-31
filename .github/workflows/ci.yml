@@ -34,14 +34,6 @@ jobs:
       - name: Run tests and generate Allure report
         run: mvn -B clean test
 
-      - name: Upload Surefire reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: surefire-reports
-          path: target/surefire-reports
-          if-no-files-found: ignore
-
       - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
@@ -50,12 +42,12 @@ jobs:
           path: target/allure-results
           if-no-files-found: ignore
 
-      - name: Upload Allure HTML report
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
-          path: target/site/allure-report
+          name: screenshots
+          path: target/screenshots
           if-no-files-found: ignore
 
       - name: Upload single-file Allure report
