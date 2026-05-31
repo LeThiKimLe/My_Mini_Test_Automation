@@ -1,0 +1,32 @@
+# Playwright Java Automation Framework
+
+## 1. Mục tiêu
+Framework này được xây dựng để:
+- Dễ đọc test theo nghiệp vụ
+- Dễ mở rộng flow
+- Giảm coupling giữa Page – Test
+- Framework này được thiết kế theo hướng hành vi nghiệp vụ thay vì hành động UI đơn lẻ.
+Page Object chỉ chịu trách nhiệm tương tác UI, trong khi Flow đóng vai trò điều phối nghiệp vụ.
+Cách này giúp test ít bị ảnh hưởng khi UI thay đổi nhưng nghiệp vụ giữ nguyên
+
+## 2. Kiến trúc tổng thể
+Page → Flow → Test
+Utils & TestData dùng chung
+
+## 3. Vì sao không test trực tiếp trong Page?
+Page chỉ biết UI.
+Flow mới biết nghiệp vụ.
+
+## 4. Khi nào tạo Flow mới?
+- Khi nghiệp vụ có thể tái sử dụng
+- Khi nhiều test dùng chung hành vi
+
+## 5. Test Data được quản lý thế nào?
+- Properties file
+- Không hard-code trong test
+
+## 6. Ví dụ test case
+- Mở trang login
+- Thực hiện login với test data
+- Kiểm tra login thành công và hiển thị trang dashboard
+- Kiểm tra login thất bại với thông báo lỗi phù hợp

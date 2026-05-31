@@ -1,0 +1,8 @@
+target/
+.allure/
+allure-results/
+.m2/
+
+*.log
+*.tmp
+.DS_Store
