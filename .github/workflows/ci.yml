@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: target/screenshots
+          path: target/site/allure-report/data/attachments
           if-no-files-found: ignore
 
       - name: Upload single-file Allure report
