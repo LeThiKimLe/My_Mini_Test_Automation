@@ -50,7 +50,11 @@ pipeline {
             }
             post {
                 always {
-                    publishSuiteArtifacts('smoke')
+                    allure([
+                        commandline: 'allure',
+                        includeProperties: false,
+                        results: [[path: 'allure-results']]
+                    ])
                 }
             }
         }
@@ -64,7 +68,11 @@ pipeline {
             }
             post {
                 always {
-                    publishSuiteArtifacts('regression')
+                    allure([
+                        commandline: 'allure',
+                        includeProperties: false,
+                        results: [[path: 'allure-results']]
+                    ])
                 }
             }
         }
