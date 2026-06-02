@@ -28,7 +28,7 @@ pipeline {
                         sh '''
                             mvn -B org.codehaus.mojo:exec-maven-plugin:3.1.0:java \
                               -Dexec.mainClass=com.microsoft.playwright.CLI \
-                              -Dexec.args="install --with-deps chromium"
+                              -Dexec.args="install chromium"
                         '''
                     } else {
                         bat '''
