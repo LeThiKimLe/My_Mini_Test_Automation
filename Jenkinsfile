@@ -53,7 +53,7 @@ pipeline {
                     allure([
                         commandline: 'allure',
                         includeProperties: false,
-                        results: [[path: 'allure-results']]
+                        results: [[path: 'target/allure-results']]
                     ])
                 }
             }
@@ -71,7 +71,7 @@ pipeline {
                     allure([
                         commandline: 'allure',
                         includeProperties: false,
-                        results: [[path: 'allure-results']]
+                        results: [[path: 'target/allure-results']]
                     ])
                 }
             }
