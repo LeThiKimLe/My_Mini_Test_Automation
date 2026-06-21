@@ -41,8 +41,8 @@ Pipeline file: `Jenkinsfile`
 The Jenkins pipeline:
 - Checks out the repository
 - Installs Playwright Chromium
-- Lets you choose `smoke`, `regression`, or `all` through the `TEST_SUITE` parameter
-- Runs `mvn -B clean test -Psmoke` or `mvn -B clean test -Pregression`
+- Lets you select a predefined test suite (`regression`, `smoke`, `all`, or `custom`) via the `TEST_SUITE` parameter. If `custom` is selected, you can specify a JUnit tag expression in `CUSTOM_TEST_GROUP`.
+- Runs the corresponding Maven command (e.g. using `-Psmoke`, `-Pregression`, or `-Dtest.groups=...`)
 - Publishes JUnit reports
 - Archives Allure report/results/screenshots/traces
 - Publishes Allure report when the Jenkins Allure plugin is installed

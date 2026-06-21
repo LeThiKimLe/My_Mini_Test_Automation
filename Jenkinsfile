@@ -7,10 +7,15 @@ pipeline {
     }
 
     parameters {
+        choice(
+            name: 'TEST_SUITE',
+            choices: ['regression', 'smoke', 'all', 'custom'],
+            description: 'Select test suite to run. Choose "custom" to specify a custom tag expression in CUSTOM_TEST_GROUP.'
+        )
         string(
-            name: 'CUSTOM_TEST_GROUPS',
+            name: 'CUSTOM_TEST_GROUP',
             defaultValue: '',
-            description: 'Optional advanced JUnit tag expression. If filled, Jenkins skips the dynamic picker.'
+            description: 'Specify the custom JUnit tag expression (e.g. smoke & sprint-login). Only used if TEST_SUITE is "custom".'
         )
     }
 
@@ -29,23 +34,15 @@ pipeline {
         stage('Select Test Group') {
             steps {
                 script {
-                    if (params.CUSTOM_TEST_GROUPS?.trim()) {
-                        env.SELECTED_TEST_GROUP = params.CUSTOM_TEST_GROUPS.trim()
-                        echo "Using custom test group expression: ${env.SELECTED_TEST_GROUP}"
+                    if (params.TEST_SUITE == 'custom') {
+                        if (!params.CUSTOM_TEST_GROUP?.trim()) {
+                            error "TEST_SUITE is set to 'custom', but CUSTOM_TEST_GROUP is empty."
+                        }
+                        env.SELECTED_TEST_GROUP = params.CUSTOM_TEST_GROUP.trim()
+                        echo "Using custom test group: ${env.SELECTED_TEST_GROUP}"
                     } else {
-                        def choices = loadTestGroupChoices()
-                        env.SELECTED_TEST_GROUP = input(
-                            message: 'Choose test group to run',
-                            ok: 'Run tests',
-                            parameters: [
-                                choice(
-                                    name: 'TEST_GROUP',
-                                    choices: choices.join('\n'),
-                                    description: 'Loaded from ci/test-groups.txt'
-                                )
-                            ]
-                        )
-                        echo "Selected test group: ${env.SELECTED_TEST_GROUP}"
+                        env.SELECTED_TEST_GROUP = params.TEST_SUITE
+                        echo "Using selected test suite: ${env.SELECTED_TEST_GROUP}"
                     }
                 }
             }
@@ -92,23 +89,7 @@ pipeline {
     }
 }
 
-List<String> loadTestGroupChoices() {
-    def groupsFile = 'ci/test-groups.txt'
-    if (!fileExists(groupsFile)) {
-        error "Missing ${groupsFile}. Add one test group expression per line."
-    }
 
-    def choices = readFile(groupsFile)
-        .readLines()
-        .collect { it.trim() }
-        .findAll { it && !it.startsWith('#') }
-
-    if (choices.isEmpty()) {
-        error "${groupsFile} does not contain any test group choices."
-    }
-
-    return choices
-}
 
 void runSelectedTestGroup(String testGroup) {
     if (!testGroup?.trim()) {
