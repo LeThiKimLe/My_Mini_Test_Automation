@@ -35,8 +35,8 @@ pipeline {
             steps {
                 script {
                     // Fallback to default 'all' if parameters are not yet loaded (first run after Jenkinsfile change)
-                    def testSuite = params.TEST_SUITE ?: 'all'
-                    def customGroup = params.CUSTOM_TEST_GROUP ?: ''
+                    def testSuite = params.TEST_SUITE ? params.TEST_SUITE : 'all'
+                    def customGroup = params.CUSTOM_TEST_GROUP ? params.CUSTOM_TEST_GROUP : ''
 
                     if (testSuite == 'custom') {
                         if (!customGroup.trim()) {
