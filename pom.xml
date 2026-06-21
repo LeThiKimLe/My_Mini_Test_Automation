@@ -19,6 +19,7 @@
     <aspectj.version>1.9.22.1</aspectj.version>
     <allure.report.version>2.30.0</allure.report.version>
     <allure.command>${project.basedir}/.allure/allure-${allure.report.version}/bin/allure</allure.command>
+    <test.groups></test.groups>
   </properties>
 
   <dependencies>
@@ -120,6 +121,7 @@
                     -javaagent:${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar
                 </argLine>
                 <testFailureIgnore>true</testFailureIgnore>
+                <groups>${test.groups}</groups>
                 <systemPropertyVariables>
                     <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
                 </systemPropertyVariables>
@@ -172,31 +174,15 @@
   <profiles>
     <profile>
         <id>smoke</id>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <groups>smoke</groups>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
+        <properties>
+            <test.groups>smoke</test.groups>
+        </properties>
     </profile>
     <profile>
         <id>regression</id>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <groups>regression</groups>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
+        <properties>
+            <test.groups>regression</test.groups>
+        </properties>
     </profile>
     <profile>
         <id>windows</id>
