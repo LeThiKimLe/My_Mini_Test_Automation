@@ -7,8 +7,19 @@ pipeline {
     }
 
     parameters {
-        choice(name: 'TEST_SUITE', choices: ['smoke', 'regression', 'all'], description: 'Test suite to run')
-        string(name: 'TEST_GROUPS', defaultValue: '', description: 'Optional JUnit tag expression, for example: regression & sprint-login')
+        choice(
+            name: 'TEST_GROUP_PRESET',
+            choices: [
+                'smoke',
+                'regression',
+                'all',
+                'smoke & sprint-login',
+                'regression & sprint-login',
+                'regression & release-1.0'
+            ],
+            description: 'Choose a predefined test group expression'
+        )
+        string(name: 'CUSTOM_TEST_GROUPS', defaultValue: '', description: 'Optional advanced JUnit tag expression. If filled, this overrides TEST_GROUP_PRESET.')
     }
 
     environment {
@@ -44,7 +55,7 @@ pipeline {
 
         stage('Smoke Tests') {
             when {
-                expression { !params.TEST_GROUPS?.trim() && (params.TEST_SUITE == 'smoke' || params.TEST_SUITE == 'all') }
+                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'smoke' }
             }
             steps {
                 runMavenSuite('smoke')
@@ -62,7 +73,7 @@ pipeline {
 
         stage('Regression Tests') {
             when {
-                expression { !params.TEST_GROUPS?.trim() && (params.TEST_SUITE == 'regression' || params.TEST_SUITE == 'all') }
+                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'regression' }
             }
             steps {
                 runMavenSuite('regression')
@@ -80,10 +91,28 @@ pipeline {
 
         stage('Custom Tagged Tests') {
             when {
-                expression { params.TEST_GROUPS?.trim() }
+                expression { getSelectedTagExpression() }
             }
             steps {
-                runMavenTagExpression(params.TEST_GROUPS.trim())
+                runMavenTagExpression(getSelectedTagExpression())
+            }
+            post {
+                always {
+                    allure([
+                        commandline: 'allure',
+                        includeProperties: false,
+                        results: [[path: 'target/allure-results']]
+                    ])
+                }
+            }
+        }
+
+        stage('All Tests') {
+            when {
+                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'all' }
+            }
+            steps {
+                runAllTests()
             }
             post {
                 always {
@@ -98,11 +127,31 @@ pipeline {
     }
 }
 
+String getSelectedTagExpression() {
+    if (params.CUSTOM_TEST_GROUPS?.trim()) {
+        return params.CUSTOM_TEST_GROUPS.trim()
+    }
+
+    if (params.TEST_GROUP_PRESET in ['smoke', 'regression', 'all']) {
+        return ''
+    }
+
+    return params.TEST_GROUP_PRESET
+}
+
 void runMavenSuite(String suite) {
     if (isUnix()) {
         sh "mvn -B clean test -P${suite}"
     } else {
         bat "mvn -B clean test -P${suite}"
+    }
+}
+
+void runAllTests() {
+    if (isUnix()) {
+        sh "mvn -B clean test"
+    } else {
+        bat "mvn -B clean test"
     }
 }
 

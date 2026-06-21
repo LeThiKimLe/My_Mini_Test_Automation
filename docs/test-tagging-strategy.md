@@ -149,15 +149,21 @@ Jenkins has two parameters:
 
 | Parameter | Purpose |
 | --- | --- |
-| `TEST_SUITE` | Choose `smoke`, `regression`, or `all`. |
-| `TEST_GROUPS` | Optional custom JUnit tag expression. |
+| `TEST_GROUP_PRESET` | Choose a predefined group such as `smoke`, `regression`, `regression & sprint-login`, or `regression & release-1.0`. |
+| `CUSTOM_TEST_GROUPS` | Optional advanced JUnit tag expression. |
 
-If `TEST_GROUPS` is filled, Jenkins ignores `TEST_SUITE` and runs the custom expression.
+If `CUSTOM_TEST_GROUPS` is filled, Jenkins ignores `TEST_GROUP_PRESET` and runs the custom expression.
 
 Example:
 
 ```text
-TEST_GROUPS = regression & sprint-login
+TEST_GROUP_PRESET = regression & sprint-login
+```
+
+Advanced example:
+
+```text
+CUSTOM_TEST_GROUPS = regression & (sprint-login | sprint-checkout)
 ```
 
 ## Practical Rule

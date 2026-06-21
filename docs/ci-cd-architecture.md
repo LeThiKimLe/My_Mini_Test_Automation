@@ -33,7 +33,7 @@ flowchart TD
 | --- | --- |
 | `pom.xml` | Defines dependencies, Maven plugins, Allure generation, and smoke/regression profiles. |
 | `.github/workflows/ci.yml` | GitHub Actions pipeline with separate smoke and regression jobs. |
-| `Jenkinsfile` | Jenkins pipeline with a `TEST_SUITE` parameter. |
+| `Jenkinsfile` | Jenkins pipeline with selectable test group presets and optional custom tag expressions. |
 | `src/test/java/annotations/*` | Custom annotations such as `@SmokeRegressionTest` and `@RegressionTest`. |
 | `src/test/java/base/AllureStepScreenshotListener.java` | Adds screenshots to each Allure step. |
 

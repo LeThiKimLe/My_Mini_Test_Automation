@@ -35,11 +35,12 @@ Meaning:
 
 This prevents Jenkins from storing old build logs forever.
 
-## Parameter: TEST_SUITE
+## Parameters
 
 ```groovy
 parameters {
-    choice(name: 'TEST_SUITE', choices: ['smoke', 'regression', 'all'], description: 'Test suite to run')
+    choice(name: 'TEST_GROUP_PRESET', choices: [...], description: 'Choose a predefined test group expression')
+    string(name: 'CUSTOM_TEST_GROUPS', defaultValue: '', description: 'Optional advanced JUnit tag expression')
 }
 ```
 
@@ -48,10 +49,14 @@ When you start a Jenkins build, you can choose:
 - `smoke`
 - `regression`
 - `all`
+- `smoke & sprint-login`
+- `regression & sprint-login`
+- `regression & release-1.0`
 
-This gives Jenkins more manual control than the GitHub workflow.
+For most runs, use `TEST_GROUP_PRESET`.
 
-GitHub Actions decides based on event type. Jenkins lets the person running the job choose.
+If you need a tag expression that is not in the dropdown, fill `CUSTOM_TEST_GROUPS`.
+When `CUSTOM_TEST_GROUPS` has a value, Jenkins ignores `TEST_GROUP_PRESET`.
 
 ## Environment
 
@@ -110,7 +115,7 @@ Use `sh` for Unix-like agents and `bat` for Windows agents.
 ```groovy
 stage('Smoke Tests') {
     when {
-        expression { params.TEST_SUITE == 'smoke' || params.TEST_SUITE == 'all' }
+        expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'smoke' }
     }
     steps {
         runMavenSuite('smoke')
@@ -120,8 +125,8 @@ stage('Smoke Tests') {
 
 This stage runs only when:
 
-- `TEST_SUITE = smoke`
-- or `TEST_SUITE = all`
+- `TEST_GROUP_PRESET = smoke`
+- and `CUSTOM_TEST_GROUPS` is empty
 
 It calls:
 
@@ -140,7 +145,7 @@ mvn -B clean test -Psmoke
 ```groovy
 stage('Regression Tests') {
     when {
-        expression { params.TEST_SUITE == 'regression' || params.TEST_SUITE == 'all' }
+        expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'regression' }
     }
     steps {
         runMavenSuite('regression')
@@ -150,14 +155,43 @@ stage('Regression Tests') {
 
 This stage runs only when:
 
-- `TEST_SUITE = regression`
-- or `TEST_SUITE = all`
+- `TEST_GROUP_PRESET = regression`
+- and `CUSTOM_TEST_GROUPS` is empty
 
 It runs:
 
 ```bash
 mvn -B clean test -Pregression
 ```
+
+## Stage: Custom Tagged Tests
+
+This stage runs when the selected preset is a tag expression, such as:
+
+```text
+smoke & sprint-login
+regression & sprint-login
+regression & release-1.0
+```
+
+It also runs when `CUSTOM_TEST_GROUPS` is filled.
+
+Examples:
+
+```bash
+mvn -B clean test "-Dtest.groups=regression & sprint-login"
+mvn -B clean test "-Dtest.groups=regression & (sprint-login | sprint-checkout)"
+```
+
+## Stage: All Tests
+
+When `TEST_GROUP_PRESET = all`, Jenkins runs:
+
+```bash
+mvn -B clean test
+```
+
+This runs the full test set without a tag filter.
 
 ## Helper Function: runMavenSuite
 
