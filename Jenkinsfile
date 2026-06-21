@@ -34,14 +34,18 @@ pipeline {
         stage('Select Test Group') {
             steps {
                 script {
-                    if (params.TEST_SUITE == 'custom') {
-                        if (!params.CUSTOM_TEST_GROUP?.trim()) {
+                    // Fallback to default 'all' if parameters are not yet loaded (first run after Jenkinsfile change)
+                    def testSuite = params.TEST_SUITE ?: 'all'
+                    def customGroup = params.CUSTOM_TEST_GROUP ?: ''
+
+                    if (testSuite == 'custom') {
+                        if (!customGroup.trim()) {
                             error "TEST_SUITE is set to 'custom', but CUSTOM_TEST_GROUP is empty."
                         }
-                        env.SELECTED_TEST_GROUP = params.CUSTOM_TEST_GROUP.trim()
+                        env.SELECTED_TEST_GROUP = customGroup.trim()
                         echo "Using custom test group: ${env.SELECTED_TEST_GROUP}"
                     } else {
-                        env.SELECTED_TEST_GROUP = params.TEST_SUITE
+                        env.SELECTED_TEST_GROUP = testSuite
                         echo "Using selected test suite: ${env.SELECTED_TEST_GROUP}"
                     }
                 }
