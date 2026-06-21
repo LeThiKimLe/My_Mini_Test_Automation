@@ -7,29 +7,47 @@ pipeline {
     }
 
     parameters {
-        choice(
-            name: 'TEST_GROUP_PRESET',
-            choices: [
-                'smoke',
-                'regression',
-                'all',
-                'smoke & sprint-login',
-                'regression & sprint-login',
-                'regression & release-1.0'
-            ],
-            description: 'Choose a predefined test group expression'
+        string(
+            name: 'CUSTOM_TEST_GROUPS',
+            defaultValue: '',
+            description: 'Optional advanced JUnit tag expression. If filled, Jenkins skips the dynamic picker.'
         )
-        string(name: 'CUSTOM_TEST_GROUPS', defaultValue: '', description: 'Optional advanced JUnit tag expression. If filled, this overrides TEST_GROUP_PRESET.')
     }
 
     environment {
         MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
+        SELECTED_TEST_GROUP = ''
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Select Test Group') {
+            steps {
+                script {
+                    if (params.CUSTOM_TEST_GROUPS?.trim()) {
+                        env.SELECTED_TEST_GROUP = params.CUSTOM_TEST_GROUPS.trim()
+                        echo "Using custom test group expression: ${env.SELECTED_TEST_GROUP}"
+                    } else {
+                        def choices = loadTestGroupChoices()
+                        env.SELECTED_TEST_GROUP = input(
+                            message: 'Choose test group to run',
+                            ok: 'Run tests',
+                            parameters: [
+                                choice(
+                                    name: 'TEST_GROUP',
+                                    choices: choices.join('\n'),
+                                    description: 'Loaded from ci/test-groups.txt'
+                                )
+                            ]
+                        )
+                        echo "Selected test group: ${env.SELECTED_TEST_GROUP}"
+                    }
+                }
             }
         }
 
@@ -53,69 +71,16 @@ pipeline {
             }
         }
 
-        stage('Smoke Tests') {
-            when {
-                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'smoke' }
-            }
+        stage('Run Tests') {
             steps {
-                runMavenSuite('smoke')
-            }
-            post {
-                always {
-                    allure([
-                        commandline: 'allure',
-                        includeProperties: false,
-                        results: [[path: 'target/allure-results']]
-                    ])
+                script {
+                    runSelectedTestGroup(env.SELECTED_TEST_GROUP)
                 }
             }
-        }
-
-        stage('Regression Tests') {
-            when {
-                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'regression' }
-            }
-            steps {
-                runMavenSuite('regression')
-            }
             post {
                 always {
-                    allure([
-                        commandline: 'allure',
-                        includeProperties: false,
-                        results: [[path: 'target/allure-results']]
-                    ])
-                }
-            }
-        }
-
-        stage('Custom Tagged Tests') {
-            when {
-                expression { getSelectedTagExpression() }
-            }
-            steps {
-                runMavenTagExpression(getSelectedTagExpression())
-            }
-            post {
-                always {
-                    allure([
-                        commandline: 'allure',
-                        includeProperties: false,
-                        results: [[path: 'target/allure-results']]
-                    ])
-                }
-            }
-        }
-
-        stage('All Tests') {
-            when {
-                expression { !params.CUSTOM_TEST_GROUPS?.trim() && params.TEST_GROUP_PRESET == 'all' }
-            }
-            steps {
-                runAllTests()
-            }
-            post {
-                always {
+                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-single/index.html, target/allure-results/**, target/site/allure-report/data/attachments/**, target/trace/**'
                     allure([
                         commandline: 'allure',
                         includeProperties: false,
@@ -127,16 +92,36 @@ pipeline {
     }
 }
 
-String getSelectedTagExpression() {
-    if (params.CUSTOM_TEST_GROUPS?.trim()) {
-        return params.CUSTOM_TEST_GROUPS.trim()
+List<String> loadTestGroupChoices() {
+    def groupsFile = 'ci/test-groups.txt'
+    if (!fileExists(groupsFile)) {
+        error "Missing ${groupsFile}. Add one test group expression per line."
     }
 
-    if (params.TEST_GROUP_PRESET in ['smoke', 'regression', 'all']) {
-        return ''
+    def choices = readFile(groupsFile)
+        .readLines()
+        .collect { it.trim() }
+        .findAll { it && !it.startsWith('#') }
+
+    if (choices.isEmpty()) {
+        error "${groupsFile} does not contain any test group choices."
     }
 
-    return params.TEST_GROUP_PRESET
+    return choices
+}
+
+void runSelectedTestGroup(String testGroup) {
+    if (!testGroup?.trim()) {
+        error 'No test group selected.'
+    }
+
+    if (testGroup == 'all') {
+        runAllTests()
+    } else if (testGroup in ['smoke', 'regression']) {
+        runMavenSuite(testGroup)
+    } else {
+        runMavenTagExpression(testGroup)
+    }
 }
 
 void runMavenSuite(String suite) {
@@ -149,9 +134,9 @@ void runMavenSuite(String suite) {
 
 void runAllTests() {
     if (isUnix()) {
-        sh "mvn -B clean test"
+        sh 'mvn -B clean test'
     } else {
-        bat "mvn -B clean test"
+        bat 'mvn -B clean test'
     }
 }
 
@@ -161,11 +146,4 @@ void runMavenTagExpression(String tagExpression) {
     } else {
         bat "mvn -B clean test \"-Dtest.groups=${tagExpression}\""
     }
-}
-
-void publishSuiteArtifacts(String suite) {
-    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
-    archiveArtifacts allowEmptyArchive: true, artifacts: 'target/site/allure-report/**, target/allure-single/index.html, target/allure-results/**, target/site/allure-report/data/attachments/**, target/trace/**'
-    archiveArtifacts allowEmptyArchive: true, artifacts: 'target/allure-single/index.html', fingerprint: true
-    allure includeProperties: false, reportBuildPolicy: 'ALWAYS', results: [[path: 'target/allure-results']]
 }

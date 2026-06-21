@@ -35,16 +35,29 @@ Meaning:
 
 This prevents Jenkins from storing old build logs forever.
 
-## Parameters
+## Parameters And Dynamic Test Group Picker
 
 ```groovy
 parameters {
-    choice(name: 'TEST_GROUP_PRESET', choices: [...], description: 'Choose a predefined test group expression')
     string(name: 'CUSTOM_TEST_GROUPS', defaultValue: '', description: 'Optional advanced JUnit tag expression')
 }
 ```
 
-When you start a Jenkins build, you can choose:
+Jenkins only has one startup parameter:
+
+- `CUSTOM_TEST_GROUPS`
+
+For normal use, leave it empty.
+
+After checkout, Jenkins reads:
+
+```text
+ci/test-groups.txt
+```
+
+Then it shows a dropdown inside the running build.
+
+Example choices:
 
 - `smoke`
 - `regression`
@@ -53,10 +66,8 @@ When you start a Jenkins build, you can choose:
 - `regression & sprint-login`
 - `regression & release-1.0`
 
-For most runs, use `TEST_GROUP_PRESET`.
-
 If you need a tag expression that is not in the dropdown, fill `CUSTOM_TEST_GROUPS`.
-When `CUSTOM_TEST_GROUPS` has a value, Jenkins ignores `TEST_GROUP_PRESET`.
+When `CUSTOM_TEST_GROUPS` has a value, Jenkins skips the dropdown.
 
 ## Environment
 

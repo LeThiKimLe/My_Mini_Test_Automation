@@ -145,19 +145,36 @@ When `test_groups` is provided, GitHub Actions skips the default smoke/regressio
 
 ## Jenkins
 
-Jenkins has two parameters:
+Jenkins uses a dynamic picker after checkout.
 
-| Parameter | Purpose |
-| --- | --- |
-| `TEST_GROUP_PRESET` | Choose a predefined group such as `smoke`, `regression`, `regression & sprint-login`, or `regression & release-1.0`. |
-| `CUSTOM_TEST_GROUPS` | Optional advanced JUnit tag expression. |
+The choices come from:
 
-If `CUSTOM_TEST_GROUPS` is filled, Jenkins ignores `TEST_GROUP_PRESET` and runs the custom expression.
+```text
+ci/test-groups.txt
+```
+
+Example file:
+
+```text
+all
+smoke
+regression
+smoke & sprint-login
+regression & sprint-login
+regression & release-1.0
+```
+
+When Jenkins starts:
+
+1. It checks out the repository.
+2. It reads `ci/test-groups.txt`.
+3. It shows a dropdown inside the build.
+4. The selected value is passed to Maven.
 
 Example:
 
 ```text
-TEST_GROUP_PRESET = regression & sprint-login
+Selected group = regression & sprint-login
 ```
 
 Advanced example:
@@ -165,6 +182,8 @@ Advanced example:
 ```text
 CUSTOM_TEST_GROUPS = regression & (sprint-login | sprint-checkout)
 ```
+
+If `CUSTOM_TEST_GROUPS` is filled when starting the build, Jenkins skips the picker and runs that expression directly.
 
 ## Practical Rule
 

@@ -1,0 +1,6 @@
+all
+smoke
+regression
+smoke & sprint-login
+regression & sprint-login
+regression & release-1.0
