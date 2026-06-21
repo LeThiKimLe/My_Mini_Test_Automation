@@ -1,3 +1,5 @@
+def selectedTestGroup = ''
+
 pipeline {
     agent any
 
@@ -10,18 +12,17 @@ pipeline {
         choice(
             name: 'TEST_SUITE',
             choices: ['regression', 'smoke', 'all', 'custom'],
-            description: 'Select test suite to run. Choose "custom" to specify a custom tag expression in CUSTOM_TEST_GROUP.'
+            description: 'Select test suite to run. Choose "custom" to specify a custom tag expression in CUSTOM_TEST_GROUPS.'
         )
         string(
-            name: 'CUSTOM_TEST_GROUP',
-            defaultValue: 'release-2.0',
+            name: 'CUSTOM_TEST_GROUPS',
+            defaultValue: '',
             description: 'Specify the custom JUnit tag expression (e.g. smoke & sprint-login). Only used if TEST_SUITE is "custom".'
         )
     }
 
     environment {
         MAVEN_OPTS = '-Dmaven.repo.local=.m2/repository'
-        SELECTED_TEST_GROUP = ''
     }
 
     stages {
@@ -36,17 +37,23 @@ pipeline {
                 script {
                     // Fallback to default 'all' if parameters are not yet loaded (first run after Jenkinsfile change)
                     def testSuite = params.TEST_SUITE ? params.TEST_SUITE : 'all'
-                    def customGroup = params.CUSTOM_TEST_GROUP ? params.CUSTOM_TEST_GROUP : ''
+                    
+                    // Read from either plural or singular parameter, handle nulls gracefully
+                    def rawCustom = params.CUSTOM_TEST_GROUPS ?: params.CUSTOM_TEST_GROUP ?: ''
+                    def customGroup = rawCustom.toString().trim()
+                    if (customGroup == 'null') {
+                        customGroup = ''
+                    }
 
                     if (testSuite == 'custom') {
-                        if (!customGroup.trim()) {
-                            error "TEST_SUITE is set to 'custom', but CUSTOM_TEST_GROUP is empty."
+                        if (!customGroup) {
+                            error "TEST_SUITE is set to 'custom', but CUSTOM_TEST_GROUPS is empty."
                         }
-                        env.SELECTED_TEST_GROUP = customGroup.trim()
-                        echo "Using custom test group: ${env.SELECTED_TEST_GROUP}"
+                        selectedTestGroup = customGroup
+                        echo "Using custom test group: ${selectedTestGroup}"
                     } else {
-                        env.SELECTED_TEST_GROUP = testSuite
-                        echo "Using selected test suite: ${env.SELECTED_TEST_GROUP}"
+                        selectedTestGroup = testSuite
+                        echo "Using selected test suite: ${selectedTestGroup}"
                     }
                 }
             }
@@ -75,7 +82,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    runSelectedTestGroup(env.SELECTED_TEST_GROUP)
+                    runSelectedTestGroup(selectedTestGroup)
                 }
             }
             post {
