@@ -14,7 +14,7 @@ pipeline {
         )
         string(
             name: 'CUSTOM_TEST_GROUP',
-            defaultValue: '',
+            defaultValue: 'release-2.0',
             description: 'Specify the custom JUnit tag expression (e.g. smoke & sprint-login). Only used if TEST_SUITE is "custom".'
         )
     }
