@@ -9,13 +9,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import com.microsoft.playwright.*;
 
 import config.TestConfig;
+import factory.BrowserFactory;
 import flow.AuthenticationFlow;
 import pages.LoginPage;
 import pages.ProductPage;
 
 @ExtendWith(PlaywrightTestWatcher.class)
 public class BaseTest {
-    private static Playwright playwright;
     private static Browser browser;
     protected Page page;
 
@@ -29,8 +29,7 @@ public class BaseTest {
 
     @BeforeAll
     static void setupBrowser() {
-        playwright = Playwright.create();
-        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(TestConfig.getHeadless()));
+        browser = BrowserFactory.getBrowser();
     }
     
     @BeforeEach
@@ -50,8 +49,8 @@ public class BaseTest {
 
     @AfterAll
     static void teardown() {
-        browser.close();
-        playwright.close();
+        BrowserFactory.close();
+        utils.AllureReportHelper.generateSingleReports();
     }
 
     void createPages() {

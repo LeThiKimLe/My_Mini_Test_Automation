@@ -18,7 +18,6 @@ public class TestConfig {
         }
     }
 
-
     public static String getBaseUrl() {
         return getProperty("base.url");
     }
