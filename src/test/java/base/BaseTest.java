@@ -50,7 +50,9 @@ public class BaseTest {
     @AfterAll
     static void teardown() {
         BrowserFactory.close();
-        utils.AllureReportHelper.generateSingleReports();
+        if (Boolean.parseBoolean(System.getProperty("allure.single.file.report.enabled", "true"))) {
+            utils.AllureReportHelper.generateSingleReports();
+        }
     }
 
     void createPages() {

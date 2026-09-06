@@ -1,4 +1,4 @@
-package main.java.utils;
+package utils;
 
 import java.util.Deque;
 import java.util.HashMap;
@@ -6,7 +6,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
-import utils.DateUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.Status;
+import io.qameta.allure.model.StepResult;
 
 public class Loggers {
     public static ThreadLocal<Map<String, StringBuilder>> threadLocalStepLogs = ThreadLocal.withInitial(HashMap::new);
@@ -47,6 +52,12 @@ public class Loggers {
     public static void addStepLog(String msg) {
         if (!threadLocalCurrentSteps.get().isEmpty()) {
             threadLocalStepLogs.get().get(threadLocalCurrentSteps.get()).append(msg).append("\n");
+        }
+    }
+
+    public static void addStepLogs(String msg) {
+        if (!threadLocalCurrentSteps.get().isEmpty()) {
+            addStepLogs(msg, threadLocalCurrentSteps.get());
         }
     }
 

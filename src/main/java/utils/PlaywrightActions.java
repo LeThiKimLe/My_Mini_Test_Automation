@@ -1,5 +1,6 @@
 package utils;
 
+import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,14 +8,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Route;
+import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.WaitForSelectorState;
 
-import main.java.utils.Locators;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.StepResult;
 
 public class PlaywrightActions {
 
+    private static final Loggers logger = new Loggers();
     private Page page = null;
     private Page previousPage = null;
     private BrowserContext context = null;
@@ -52,8 +58,8 @@ public class PlaywrightActions {
             Page.ScreenshotOptions screenshotOptions = new Page.ScreenshotOptions()
                     .setPath(screenshotPath)
                     .setFullPage(true);
-            Allure.addAttachment(imageName.replace(".png", ""),
-                    new ByteArrayInputScream(this.page.screenshot(screenshotOptions)));
+            byte[] screenshot = this.page.screenshot(screenshotOptions);
+            Allure.addAttachment(imageName.replace(".png", ""), "image/png", new ByteArrayInputStream(screenshot), ".png");
             logger.objectInfo(String.format("A full page screenshot was taken - [%s]", imageName));
         } catch (Exception e) {
             logger.failed("Failed to take screenshot: " + e.getMessage());
@@ -67,9 +73,9 @@ public class PlaywrightActions {
         try {
             Path screenshotPath = Utils.getScreenshotPath();
             String imageName = screenshotPath.toString().substring(screenshotPath.toString().lastIndexOf('\\') + 1);
-            byte[] screenshotOptions = page.locator(locator)
+            byte[] screenshotBytes = page.locator(locator)
                     .screenshot(new Locator.ScreenshotOptions().setPath(screenshotPath));
-            Allure.addAttachment(imageName.replace(".png", ""), new ByteArrayInputScream(screenshotOptions));
+            Allure.addAttachment(imageName.replace(".png", ""), "image/png", new ByteArrayInputStream(screenshotBytes), ".png");
             logger.objectInfo(String.format("A screenshot of locator [%s] was taken - [%s]", Locators.getLocatorName(),
                     imageName));
         } catch (Exception e) {
@@ -80,7 +86,7 @@ public class PlaywrightActions {
     }
 
     public String getRecordPath() {
-        return page.video().path();
+        return page.video() != null ? page.video().path().toString() : null;
     }
 
     public void click(String locator) {
