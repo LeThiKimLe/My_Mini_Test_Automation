@@ -1,13 +1,21 @@
 package utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class AllureReportHelper {
 
@@ -17,6 +25,52 @@ public class AllureReportHelper {
      * under target/allure-single/YYYY-MM-DD/test_case_name.html
      */
     public static void generateSingleReports() {
+        // If Maven/Allure plugin already generated a single-file report at target/allure-single/index.html,
+        // prefer using that and move it to the configured location.
+        File pluginSingle = new File("target/allure-single/index.html");
+        if (pluginSingle.exists()) {
+            System.out.println("[AllureReportHelper] Detected plugin-generated single-file report at: " + pluginSingle.getAbsolutePath());
+            try {
+                // Prefer explicit property 'allure.single.output' in config; fall back to 'allureResultBaseDir' or default folder
+                String configuredOutput = null;
+                try {
+                    configuredOutput = config.TestConfig.getProperty("allure.single.output");
+                } catch (Exception e) {
+                    // ignore if TestConfig not available
+                }
+                if (configuredOutput == null || configuredOutput.isEmpty()) {
+                    try {
+                        configuredOutput = config.TestConfig.getProperty("allureResultBaseDir");
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+                String todayStr = utils.DateUtils.today();
+                File destDir;
+                if (configuredOutput != null && !configuredOutput.isEmpty()) {
+                    destDir = new File(configuredOutput);
+                    if (destDir.isFile()) {
+                        // if user provided a file path, use its parent folder
+                        destDir = destDir.getParentFile();
+                    }
+                } else {
+                    destDir = new File("target/allure-single/" + todayStr);
+                }
+                if (!destDir.exists()) {
+                    destDir.mkdirs();
+                }
+
+                File targetFile = new File(destDir, "index.html");
+                Files.copy(pluginSingle.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[AllureReportHelper] Moved plugin single-file report to: " + targetFile.getAbsolutePath());
+            } catch (Exception e) {
+                System.err.println("[AllureReportHelper] Failed to move plugin-generated single-file report: " + e.getMessage());
+            }
+
+            // plugin file handled, nothing more to do
+            return;
+        }
+
         File resultsDir = new File("target/allure-results");
         if (!resultsDir.exists() || !resultsDir.isDirectory()) {
             System.out.println("[AllureReportHelper] allure-results directory does not exist. Skipping single report generation.");
@@ -202,8 +256,62 @@ public class AllureReportHelper {
             }
         }
 
+        if (ensureAllureCliAvailable()) {
+            return getAllureCommand();
+        }
+
         // Fallback to system PATH
         return os.contains("win") ? "allure.bat" : "allure";
+    }
+
+    private static boolean ensureAllureCliAvailable() {
+        String os = System.getProperty("os.name").toLowerCase();
+        String projectDir = System.getProperty("user.dir");
+        File allureDir = new File(projectDir, ".allure");
+        String version = "2.30.0";
+        String binaryName = os.contains("win") ? "allure.bat" : "allure";
+        File existingBinary = new File(allureDir, "allure-" + version + "/bin/" + binaryName);
+        if (existingBinary.exists()) {
+            return true;
+        }
+
+        try {
+            Files.createDirectories(allureDir.toPath());
+            File archive = new File(allureDir, "allure-" + version + ".zip");
+            String archiveUrl = "https://github.com/allure-framework/allure2/releases/download/" + version + "/allure-" + version + ".zip";
+            try (InputStream in = new URL(archiveUrl).openStream(); FileOutputStream out = new FileOutputStream(archive)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, read);
+                }
+            }
+
+            try (ZipInputStream zis = new ZipInputStream(new FileInputStream(archive))) {
+                ZipEntry entry;
+                while ((entry = zis.getNextEntry()) != null) {
+                    Path target = Paths.get(allureDir.getAbsolutePath(), entry.getName());
+                    if (entry.isDirectory()) {
+                        Files.createDirectories(target);
+                    } else {
+                        Files.createDirectories(target.getParent());
+                        try (FileOutputStream fos = new FileOutputStream(target.toFile())) {
+                            byte[] buffer = new byte[8192];
+                            int read;
+                            while ((read = zis.read(buffer)) != -1) {
+                                fos.write(buffer, 0, read);
+                            }
+                        }
+                    }
+                    zis.closeEntry();
+                }
+            }
+
+            return existingBinary.exists();
+        } catch (Exception e) {
+            System.err.println("[AllureReportHelper] Unable to download Allure CLI automatically: " + e.getMessage());
+            return false;
+        }
     }
 
     private static void deleteDirectory(File directory) {

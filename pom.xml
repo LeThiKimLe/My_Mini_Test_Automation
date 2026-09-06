@@ -20,6 +20,7 @@
     <allure.report.version>2.30.0</allure.report.version>
     <allure.command>${project.basedir}/.allure/allure-${allure.report.version}/bin/allure</allure.command>
     <test.groups></test.groups>
+    <allure.single.file.report.enabled>true</allure.single.file.report.enabled>
   </properties>
 
   <dependencies>
@@ -138,34 +139,10 @@
             <executions>
                 <execution>
                     <id>allure-report</id>
-                    <phase>test</phase>
+                    <phase>verify</phase>
                     <goals>
                         <goal>report</goal>
                     </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>allure-single-file-report</id>
-                    <phase>test</phase>
-                    <goals>
-                        <goal>exec</goal>
-                    </goals>
-                    <configuration>
-                        <executable>${allure.command}</executable>
-                        <arguments>
-                            <argument>generate</argument>
-                            <argument>--single-file</argument>
-                            <argument>${project.build.directory}/allure-results</argument>
-                            <argument>--clean</argument>
-                            <argument>-o</argument>
-                            <argument>${project.build.directory}/allure-single</argument>
-                        </arguments>
-                    </configuration>
                 </execution>
             </executions>
         </plugin>
