@@ -1,23 +1,23 @@
 package pages;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.microsoft.playwright.Page;
-
 import io.qameta.allure.Step;
+import utils.Loggers;
+import utils.PlaywrightActions;
+
 
 public abstract class BasePage {
     
-    protected Page page;
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected final PlaywrightActions WebUI;
+    protected final Loggers logger;
 
-    protected BasePage(Page page) {
-        this.page = page;
+    protected BasePage(PlaywrightActions WebUI) {
+        this.WebUI = WebUI;
+        this.logger = new Loggers();
     }
 
     @Step("Open page: [{path}]")
     public void open(String path) {
-        page.navigate(path);
+        WebUI.navigateToUrl(path);
+        logger.info(String.format("Navigated to page: %s", path));
     }
 }

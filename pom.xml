@@ -55,6 +55,16 @@
         <scope>test</scope>
     </dependency>
     
+    <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.15.1</version>
+    </dependency>
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.16.1</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -130,44 +140,10 @@
         <plugin>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-maven</artifactId>
+            <version>2.14.0</version>
             <configuration>
-                <reportVersion>${allure.report.version}</reportVersion>
-                <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
-                <reportDirectory>${project.build.directory}/site/allure-report</reportDirectory>
+                <singleFile>true</singleFile>
             </configuration>
-            <executions>
-                <execution>
-                    <id>allure-report</id>
-                    <phase>test</phase>
-                    <goals>
-                        <goal>report</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>allure-single-file-report</id>
-                    <phase>test</phase>
-                    <goals>
-                        <goal>exec</goal>
-                    </goals>
-                    <configuration>
-                        <executable>${allure.command}</executable>
-                        <arguments>
-                            <argument>generate</argument>
-                            <argument>--single-file</argument>
-                            <argument>${project.build.directory}/allure-results</argument>
-                            <argument>--clean</argument>
-                            <argument>-o</argument>
-                            <argument>${project.build.directory}/allure-single</argument>
-                        </arguments>
-                    </configuration>
-                </execution>
-            </executions>
         </plugin>
     </plugins>
   </build>

@@ -1,4 +1,4 @@
-package main.java.utils;
+package utils;
 
 import java.util.Deque;
 import java.util.HashMap;
@@ -6,6 +6,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.Status;
+import io.qameta.allure.model.StepResult;
 import utils.DateUtils;
 
 public class Loggers {
@@ -14,8 +20,15 @@ public class Loggers {
     private static final Logger logger = LoggerFactory.getLogger(Loggers.class);
     private static Deque<String> testStepStack = new LinkedList<>();
 
+    private static boolean isTestCaseRunning() {
+        return Allure.getLifecycle().getCurrentTestCase().isPresent();
+    }
+
     public void step(String stepTitle) {
         stopStep();
+        if (!isTestCaseRunning()) {
+            return;
+        }
         String stepId = UUID.randomUUID().toString();
         Allure.getLifecycle().startStep(stepId, new StepResult().setName(stepTitle));
         Allure.getLifecycle().updateStep(stepId, stepResult -> {
@@ -25,7 +38,7 @@ public class Loggers {
     }
 
     public static void stopStep(boolean testMethodFailed) {
-        if (!testStepStack.isEmpty()) {
+        if (!testStepStack.isEmpty() && isTestCaseRunning()) {
             String lastStepId = testStepStack.pop();
             if (testMethodFailed) {
                 Allure.getLifecycle().updateStep(lastStepId, stepResult -> {
@@ -56,12 +69,19 @@ public class Loggers {
         }
     }
 
+    public static void addStepLogs(String msg) {
+        addStepLog(msg);
+    }
+
     private static String formatMessage(String msg, String msgType) {
         return String.format("[%s %s] - %s", DateUtils.getCurrentTimeWithSpecificFormat("yyyy-MM-dd HH:mm:ss"), msgType, msg);
     }
 
     public void documentation(String documentation) {
         stopStep();
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.getLifecycle().startStep(UUID.randomUUID().toString(), new StepResult().setName(documentation));
         Allure.getLifecycle().stopStep();
     }
@@ -70,6 +90,9 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "TRACE");
         addStepLogs(formattedMsg);
         logger.trace(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.addAttachment("Trace Log", "text/plain", formattedMsg);
     }
 
@@ -77,6 +100,9 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "DEBUG");
         addStepLogs(formattedMsg);
         logger.debug(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.addAttachment("Debug Log", "text/plain", formattedMsg);
     }
 
@@ -84,13 +110,19 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "INFO");
         addStepLogs(formattedMsg);
         logger.info(formattedMsg);
-        Allure.addAttachment("Info Log", "text/plain", formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
+        // Allure.addAttachment("Info Log", "text/plain", formattedMsg);
     }
 
     public void warn(String msg) {
         String formattedMsg = formatMessage(msg, "WARN");
         addStepLogs(formattedMsg);
         logger.warn(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.addAttachment("Warn Log", "text/plain", formattedMsg);
     }
 
@@ -98,6 +130,9 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "ERROR");
         addStepLogs(formattedMsg);
         logger.error(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.addAttachment("Error Log", "text/plain", formattedMsg);
     }
 
@@ -105,6 +140,9 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "PASSED");
         addStepLogs(formattedMsg);
         logger.info(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.step(formattedMsg);
     }
 
@@ -112,6 +150,9 @@ public class Loggers {
         String formattedMsg = formatMessage(msg, "FAILED");
         addStepLogs(formattedMsg);
         logger.error(formattedMsg);
+        if (!isTestCaseRunning()) {
+            return;
+        }
         Allure.step(formattedMsg);
     }
 

@@ -1,20 +1,21 @@
 package pages;
 
-import com.microsoft.playwright.Page;
 import io.qameta.allure.Step;
+import locators.ProductLocators;
+import utils.PlaywrightActions;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 public class ProductPage extends BasePage {
-    private final String productTitle = ".title";
 
-    public ProductPage(Page page) {
-        super(page);
+    public ProductPage(PlaywrightActions WebUI) {
+        super(WebUI);
     }
 
     @Step("Verify user is on product page")
     public void verifyOnProductPage() {
-        assertThat(page.locator(productTitle)).hasText("Products");
+        // ProductLocators.productTitle() returns a selector string; convert to Locator via WebUI
+        assertThat(WebUI.findLocator(ProductLocators.productTitle())).hasText("Products");
         logger.info(String.format("Product page is loaded successfully"));
     }
 

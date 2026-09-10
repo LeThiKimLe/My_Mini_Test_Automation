@@ -9,93 +9,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import config.TestConfig;
+
 public class AllureReportHelper {
 
-    /**
-     * Finds all test results in target/allure-results, copies each test's JSON and attachments
-     * to a temporary folder, runs Allure CLI to generate a single HTML report, and saves it
-     * under target/allure-single/YYYY-MM-DD/test_case_name.html
-     */
-    public static void generateSingleReports() {
-        File resultsDir = new File("target/allure-results");
-        if (!resultsDir.exists() || !resultsDir.isDirectory()) {
-            System.out.println("[AllureReportHelper] allure-results directory does not exist. Skipping single report generation.");
-            return;
-        }
-
-        File[] resultFiles = resultsDir.listFiles((dir, name) -> name.endsWith("-result.json"));
-        if (resultFiles == null || resultFiles.length == 0) {
-            System.out.println("[AllureReportHelper] No test result files found in allure-results. Skipping single report generation.");
-            return;
-        }
-
-        String allureCmd = getAllureCommand();
-        if (allureCmd == null) {
-            System.err.println("[AllureReportHelper] Allure CLI could not be found. Cannot generate single file reports.");
-            return;
-        }
-
-        String todayStr = DateUtils.today();
-        File finalOutputDir = new File("target/allure-single/" + todayStr);
-        if (!finalOutputDir.exists()) {
-            finalOutputDir.mkdirs();
-        }
-
-        System.out.println("[AllureReportHelper] Found " + resultFiles.length + " test result(s). Starting single report generation...");
-
-        for (File resultFile : resultFiles) {
-            try {
-                String jsonContent = new String(Files.readAllBytes(resultFile.toPath()));
-                String testName = getTestNameFromJson(jsonContent);
-                if (testName == null || testName.isEmpty()) {
-                    testName = resultFile.getName().replace("-result.json", "");
-                }
-
-                // Create temp dirs for isolating this test result
-                File tempResultsDir = new File("target/allure-temp/results-" + testName);
-                File tempOutputDir = new File("target/allure-temp/output-" + testName);
-                
-                // Cleanup any stale temp directories first
-                deleteDirectory(tempResultsDir);
-                deleteDirectory(tempOutputDir);
-                
-                tempResultsDir.mkdirs();
-                tempOutputDir.mkdirs();
-
-                // Copy the -result.json file
-                Files.copy(resultFile.toPath(), new File(tempResultsDir, resultFile.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-                // Find and copy attachments
-                copyAttachments(jsonContent, resultsDir, tempResultsDir);
-
-                // Run Allure CLI
-                boolean success = runAllureGenerate(allureCmd, tempResultsDir, tempOutputDir);
-                if (success) {
-                    File generatedIndex = new File(tempOutputDir, "index.html");
-                    if (generatedIndex.exists()) {
-                        File targetReportFile = new File(finalOutputDir, testName + ".html");
-                        Files.copy(generatedIndex.toPath(), targetReportFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        System.out.println("[AllureReportHelper] Generated single report: " + targetReportFile.getAbsolutePath());
-                    }
-                }
-
-                // Clean up temp directories
-                deleteDirectory(tempResultsDir);
-                deleteDirectory(tempOutputDir);
-
-            } catch (Exception e) {
-                System.err.println("[AllureReportHelper] Error generating report for " + resultFile.getName() + ": " + e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        // Clean up base temp directory
-        File baseTempDir = new File("target/allure-temp");
-        if (baseTempDir.exists()) {
-            baseTempDir.delete();
-        }
-    }
-
+    
     /**
      * Parses the test name from the JSON. Tries "description" first (from annotations),
      * and falls back to "name" (method name).
@@ -221,5 +139,13 @@ public class AllureReportHelper {
             }
         }
         directory.delete();
+    }
+
+    public static void cleanAllureResults() {
+        File resultsDir = new File(TestConfig.getProperty("allureResultBaseDir", "target/allure-results"));
+        if (resultsDir.exists() && resultsDir.isDirectory()) {
+            deleteDirectory(resultsDir);
+            System.out.println("[AllureReportHelper] Cleaned allure-results directory.");
+        }
     }
 }

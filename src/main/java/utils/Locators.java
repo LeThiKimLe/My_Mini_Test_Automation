@@ -1,4 +1,4 @@
-package main.java.utils;
+package utils;
 
 import java.util.Properties;
 
@@ -7,9 +7,16 @@ public class Locators {
     
     public static String create(String locator) {
         StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-        StackWalker.StackFrame frame = walker.walk(frames -> frames.skips(1).findFirst().get());
+        StackWalker.StackFrame frame = walker.walk(frames -> frames.skip(1).findFirst().get());
         threadLocalProperties.get().setProperty("LOCATOR", String.format("%s/%s", frame.getDeclaringClass().getSimpleName(), frame.getMethodName()));
         return locator;
+    }
+
+    public static String create(String locator, Object... args) {
+        StackWalker walker = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+        StackWalker.StackFrame frame = walker.walk(frames -> frames.skip(1).findFirst().get());
+        threadLocalProperties.get().setProperty("LOCATOR", String.format("%s/%s", frame.getDeclaringClass().getSimpleName(), frame.getMethodName()));
+        return String.format(locator, args);
     }
 
     public static String getLocatorName() {

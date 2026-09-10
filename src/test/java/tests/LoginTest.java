@@ -11,6 +11,9 @@ import config.TestDataLoader;
 
 public class LoginTest extends BaseTest {
 
+    private static final String REQ = "3.10.22.1";
+    private static final String SUITE = "Login_Tests";
+
     Properties admin;
 
     @BeforeEach

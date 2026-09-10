@@ -42,4 +42,17 @@ public class TestConfig {
         return value;
     }
 
+    /**
+     * Returns the property value for {@code key}, falling back to {@code defaultValue}
+     * if the key is not found in either the environment or global properties files.
+     */
+    public static String getProperty(String key, String defaultValue) {
+        String value = getProperty(key);
+        return value != null ? value : defaultValue;
+    }
+
+    public static String getSystemEnvironment() {
+        return System.getProperty("env");
+    }
+
 }
