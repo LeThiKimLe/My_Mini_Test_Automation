@@ -20,6 +20,7 @@
     <allure.report.version>2.30.0</allure.report.version>
     <allure.command>${project.basedir}/.allure/allure-${allure.report.version}/bin/allure</allure.command>
     <test.groups></test.groups>
+    <allure.single.file.report.enabled>true</allure.single.file.report.enabled>
   </properties>
 
   <dependencies>

@@ -1,6 +1,7 @@
 package utils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,12 +30,12 @@ import utils.Loggers;
 
 public class PlaywrightActions {
 
+    private static final Loggers logger = new Loggers();
     private Page page = null;
     private Page previousPage = null;
     private BrowserContext context = null;
     private Map<Integer, Integer> numberOfPages = new HashMap<>();
     private int defaultTimeout = 5; // Default timeout in seconds
-    private Loggers logger = new Loggers();
 
     public PlaywrightActions() {
 
