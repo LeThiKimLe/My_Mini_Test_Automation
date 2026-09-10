@@ -1,6 +1,7 @@
 target/
 .allure/
 allure-results/
+results/
 .m2/
 
 *.log
