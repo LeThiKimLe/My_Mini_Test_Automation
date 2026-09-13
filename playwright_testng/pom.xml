@@ -17,8 +17,10 @@
     <allure.version>2.29.1</allure.version>
     <allure.maven.version>2.15.0</allure.maven.version>
     <surefire.version>3.5.2</surefire.version>
+    <aspectj.version>1.9.22.1</aspectj.version>
     <testng.suite>src/test/resources/suites/testng.xml</testng.suite>
     <test.groups></test.groups>
+    <generateAllureReport>true</generateAllureReport>
   </properties>
 
   <dependencies>
@@ -43,6 +45,22 @@
       <artifactId>slf4j-simple</artifactId>
       <version>2.0.16</version>
     </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.15.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.16.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <version>${aspectj.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -60,12 +78,16 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire.version}</version>
         <configuration>
+          <argLine>
+            -javaagent:${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar
+          </argLine>
           <suiteXmlFiles>
             <suiteXmlFile>${testng.suite}</suiteXmlFile>
           </suiteXmlFiles>
           <groups>${test.groups}</groups>
           <systemPropertyVariables>
             <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
+            <generateAllureReport>${generateAllureReport}</generateAllureReport>
           </systemPropertyVariables>
         </configuration>
       </plugin>
@@ -73,6 +95,9 @@
         <groupId>io.qameta.allure</groupId>
         <artifactId>allure-maven</artifactId>
         <version>${allure.maven.version}</version>
+        <configuration>
+          <singleFile>true</singleFile>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

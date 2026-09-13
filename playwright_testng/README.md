@@ -25,9 +25,11 @@ Install browsers once with `mvn exec:java` or the Playwright CLI appropriate
 to your environment. Test data is a demo property file, not a secret store.
 Pass an alternate resource with `-DtestData=testdata/users/admin.properties`.
 
-Allure results are written to `target/allure-results`; use
-`mvn allure:serve` (or `mvn allure:report`) after a run. Traces and videos are
-kept under `target/test-results/<test-class>`.
+Allure raw results are written to `target/allure-results`. A single-file HTML
+report is generated automatically at the end of `mvn test` and copied to
+`results/reports/<date>/AllureReport_<suite>_<timestamp>.html`. To skip that
+final report step, run `mvn test -DgenerateAllureReport=false`. Screenshots,
+traces, and videos are kept under `results/<test-class>`.
 
 TestNG groups are `smoke` and `regression`. Add groups to a test method and
 select them using a Maven profile or a custom suite XML.

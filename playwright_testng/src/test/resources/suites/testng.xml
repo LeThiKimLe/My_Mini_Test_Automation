@@ -3,6 +3,7 @@
 <suite name="playwright-testng" parallel="none">
   <listeners>
     <listener class-name="listener.FrameworkTestListener"/>
+    <listener class-name="listener.AllureStepScreenshotListener"/>
   </listeners>
   <test name="login">
     <groups>

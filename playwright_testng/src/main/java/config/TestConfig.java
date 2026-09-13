@@ -65,4 +65,8 @@ public final class TestConfig {
     public static int getTimeoutSeconds() {
         return Integer.parseInt(getProperty("timeout", "30"));
     }
+
+    public static String getSystemEnvironment() {
+        return System.getProperty("env");
+    }
 }

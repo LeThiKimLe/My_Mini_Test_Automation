@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import utils.Loggers;
 import utils.TestContext;
 import utils.Utils;
@@ -31,6 +32,7 @@ public class BrowserFactory {
             return;
         }
         playwright = Playwright.create();
+        logger.passed("Playwright has been created");
         BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
                 .setHeadless(TestConfig.isHeadless());
         String browserName = TestConfig.getBrowser().toLowerCase();
@@ -48,15 +50,14 @@ public class BrowserFactory {
             throw new IllegalArgumentException("Unsupported browser: " + browserName);
         }
         System.setProperty("browserVersion", browser.version());
-        logger.passed("Created " + browserName + " browser");
+        logger.passed(String.format("Create Browser with type [%s] successfully", browserName));
     }
 
     public void createPage(String contextName) {
         if (browser == null) {
             createBrowser();
         }
-        Path videoDirectory = Utils.resultDirectory().resolve(TestContext.getTestClassName() == null
-                ? "unknown" : TestContext.getTestClassName()).resolve("videos");
+        Path videoDirectory = Utils.resultDirectory();
         try {
             Files.createDirectories(videoDirectory);
         } catch (IOException exception) {
@@ -70,7 +71,10 @@ public class BrowserFactory {
                 .setRecordVideoSize(1280, 720);
         context = browser.newContext(options);
         page = context.newPage();
-        logger.passed("Created page in context [" + contextName + "]");
+        TestContext.setCurrentPageName(contextName);
+        logger.passed(String.format(
+                "[Thread-%d] Create a new Page [%s - %s] from Browser with new Context (%s) successfully",
+                Thread.currentThread().getId(), contextName, context.hashCode(), contextName));
     }
 
     public void startTracing() {
@@ -83,10 +87,9 @@ public class BrowserFactory {
 
     public void stopTracing() {
         if (context != null && tracing) {
-            tracePath = Utils.resultDirectory()
-                    .resolve(TestContext.getTestClassName() == null ? "unknown" : TestContext.getTestClassName())
-                    .resolve("traces")
-                    .resolve(safeName(TestContext.getTestCaseName()) + ".zip");
+            String contextName = TestContext.getCurrentPageName() == null
+                    ? "Default" : TestContext.getCurrentPageName();
+            tracePath = Utils.getTracePath(contextName);
             try {
                 Files.createDirectories(tracePath.getParent());
                 context.tracing().stop(new Tracing.StopOptions().setPath(tracePath));
@@ -115,12 +118,10 @@ public class BrowserFactory {
                 }
                 page.close();
             }
-            if (videoPath != null) {
-                Utils.attachFile("Playwright video", "video/webm", videoPath);
-            }
             context.close();
             context = null;
             page = null;
+            moveRecordFileToCorrectDirectory(videoPath, "Default");
         }
         if (browser != null) {
             browser.close();
@@ -130,7 +131,8 @@ public class BrowserFactory {
             playwright.close();
             playwright = null;
         }
-        logger.info("Closed browser and Playwright");
+        logger.passed("Close all pages and contexts of browser successfully");
+        logger.passed("Close Playwright successfully");
     }
 
     public void attachScreenshot(String name) {
@@ -142,9 +144,20 @@ public class BrowserFactory {
                 new java.io.ByteArrayInputStream(page.screenshot(new Page.ScreenshotOptions().setFullPage(true))),
                 "png");
     }
-
-    private static String safeName(String value) {
-        if (value == null || value.trim().isEmpty()) return "test";
-        return value.replaceAll("[^a-zA-Z0-9._-]", "_");
+    private void moveRecordFileToCorrectDirectory(Path sourceRecordPath, String contextName) {
+        if (sourceRecordPath == null || !Files.exists(sourceRecordPath)) {
+            return;
+        }
+        try {
+            String testCaseName = TestContext.getTestCaseName() != null ? TestContext.getTestCaseName() : "default";
+            String testClassName = TestContext.getTestClassName() != null ? TestContext.getTestClassName() : "default";
+            Path videoDir = Utils.resultDirectory().resolve(testClassName).resolve("videos");
+            Files.createDirectories(videoDir);
+            Path targetFile = videoDir.resolve(String.format("video_%s_%s.webm", contextName, testCaseName));
+            Files.move(sourceRecordPath, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            logger.info(String.format("Moved video record to: %s", targetFile.toString()), true);
+        } catch (Exception exception) {
+            logger.error("Failed to move record file: " + exception.getMessage(), true);
+        }
     }
 }
