@@ -167,7 +167,7 @@ public class AllureStepScreenshotListener implements StepLifecycleListener, Test
     private void addStartTimeToDescription(TestResult result) {
         String startTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String originalDescription = result.getDescription() != null ? result.getDescription() : "";
-        String updatedDescription = String. format("[Test started at: %s]%s", startTime, (originalDescription. isEmpty() ? "" : String.format("\n\n%s", originalDescription)));
+        String updatedDescription = String.format("[Test started at: %s]%s", startTime, (originalDescription. isEmpty() ? "" : String.format("\n\n%s", originalDescription)));
         result.setDescription(updatedDescription);
     }
 
